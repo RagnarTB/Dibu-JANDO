@@ -292,7 +292,7 @@ export default function App() {
       {/* PANTALLA DE CARGA */}
       {(!isCvReady || isProcessing) && (
         <div style={styles.loadingOverlay}>
-          <div className="glitch" style={{ fontSize: '32px', marginBottom: '15px', color: 'white' }}>ART LENS</div>
+          <div className="glitch" style={{ fontSize: '32px', marginBottom: '15px', color: 'white' }}>DIBU - JANDO</div>
           <div style={{ color: '#666', fontSize: '12px', letterSpacing: '2px' }}>
             {isProcessing ? "RENDERIZANDO..." : "INICIANDO MOTOR..."}
           </div>
