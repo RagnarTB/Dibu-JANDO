@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-// --- ESTILOS "RECORDER EDITION" ---
+// --- ESTILOS "CROSS-PLATFORM" ---
 const styles = {
   container: {
     position: 'relative', height: '100vh', width: '100vw',
@@ -17,18 +17,7 @@ const styles = {
     filter: 'contrast(1.6) brightness(1.05) grayscale(100%)'
   },
 
-  // INDICADOR DE GRABACIÓN (REC 🔴)
-  recIndicator: {
-    position: 'absolute', top: '40px', left: '50%', transform: 'translateX(-50%)',
-    background: 'rgba(255, 0, 0, 0.8)', color: 'white',
-    padding: '5px 15px', borderRadius: '20px',
-    fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px',
-    zIndex: 100, display: 'flex', alignItems: 'center', gap: '8px',
-    boxShadow: '0 0 15px rgba(255, 0, 0, 0.5)',
-    animation: 'pulseRed 1.5s infinite'
-  },
-
-  // UI CAPA
+  // UI LAYER
   uiLayer: {
     position: 'absolute', bottom: 0, left: 0, width: '100%', height: '100%',
     zIndex: 30, pointerEvents: 'none',
@@ -36,17 +25,33 @@ const styles = {
     background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%)'
   },
 
-  // NOTIFICACIÓN IA
-  aiToast: {
-    position: 'absolute', top: '80px', left: '50%', transform: 'translateX(-50%)',
-    background: 'rgba(255, 255, 255, 0.95)', color: '#000',
-    padding: '8px 20px', borderRadius: '30px',
-    fontWeight: '700', fontSize: '12px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.3)', zIndex: 60,
-    animation: 'slideDown 0.5s ease-out'
+  // INDICADOR REC
+  recIndicator: {
+    position: 'absolute', top: '50px', left: '50%', transform: 'translateX(-50%)',
+    background: 'rgba(255, 59, 48, 0.9)', color: 'white',
+    padding: '6px 16px', borderRadius: '20px',
+    fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px',
+    zIndex: 100, display: 'flex', alignItems: 'center', gap: '8px',
+    boxShadow: '0 0 20px rgba(255, 59, 48, 0.6)',
+    animation: 'pulseRed 1.5s infinite'
   },
 
-  // BARRA FLOTANTE
+  // PREVIEW MODAL (PANTALLA DE VIDEO)
+  previewOverlay: {
+    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+    background: '#000', zIndex: 200, display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center', padding: '20px'
+  },
+  previewVideo: {
+    width: '100%', maxHeight: '70vh', borderRadius: '15px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.5)', marginBottom: '20px',
+    background: '#111'
+  },
+  previewActions: {
+    display: 'flex', gap: '20px', width: '100%', justifyContent: 'center'
+  },
+
+  // DOCK FLOTANTE
   dockContainer: {
     width: '100%', padding: '20px', paddingBottom: '30px',
     display: 'flex', justifyContent: 'center', pointerEvents: 'none'
@@ -73,30 +78,27 @@ const styles = {
     color: 'white', background: 'rgba(255,255,255,0.06)'
   },
   activeBtn: { background: '#00E5FF', color: '#000' },
-  actionBtn: { background: '#fff', color: '#000' },
 
-  // BOTÓN GRABAR (ESTILO ESPECIAL)
-  recordBtn: {
-    background: '#222', border: '1px solid #ff4444', color: '#ff4444'
-  },
-  recordBtnActive: {
-    background: '#ff4444', color: '#fff', boxShadow: '0 0 15px rgba(255, 68, 68, 0.4)'
-  },
+  // BOTONES DE ACCIÓN (Guardar/Borrar)
+  saveBtn: { background: '#00E676', color: '#000', padding: '15px 30px', borderRadius: '50px', fontWeight: 'bold', border: 'none', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' },
+  discardBtn: { background: '#FF3B30', color: '#fff', padding: '15px 30px', borderRadius: '50px', fontWeight: 'bold', border: 'none', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' },
+
+  recordBtn: { background: '#222', border: '1px solid #ff4444', color: '#ff4444' },
+  recordBtnActive: { background: '#ff4444', color: '#fff' },
 
   sliderContainer: { flex: 1, display: 'flex', alignItems: 'center', height: '100%', padding: '0 5px' },
   slider: { width: '100%', accentColor: '#00E5FF', height: '4px', cursor: 'pointer' },
 
   floatingUnlock: {
     position: 'absolute', top: '30px', right: '20px', zIndex: 100,
-    width: '56px', height: '56px', borderRadius: '50%', border: 'none',
-    background: 'rgba(255, 61, 0, 0.9)', color: 'white', fontSize: '24px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-    boxShadow: '0 8px 30px rgba(255, 61, 0, 0.4)', pointerEvents: 'auto'
+    width: '50px', height: '50px', borderRadius: '50%', border: 'none',
+    background: '#FF3D00', color: 'white', fontSize: '24px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', pointerEvents: 'auto'
   },
 
   loadingOverlay: {
     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-    background: '#000', zIndex: 200,
+    background: '#000', zIndex: 50,
     display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
     color: '#00E5FF'
   }
@@ -111,42 +113,44 @@ export default function App() {
   const [isLocked, setIsLocked] = useState(false);
   const [aiMessage, setAiMessage] = useState(null);
 
-  // ESTADOS DE GRABACIÓN
+  // --- ESTADOS DE VIDEO ---
   const [isRecording, setIsRecording] = useState(false);
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState(null); // URL para previsualizar
+  const [videoBlob, setVideoBlob] = useState(null); // El archivo en crudo
+
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
+  const streamRef = useRef(null);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const imgHiddenRef = useRef(null);
   const fileInputRef = useRef(null);
-  const streamRef = useRef(null); // Guardamos el stream original aquí
 
   // 1. INICIALIZACIÓN
   useEffect(() => {
-    // Estilos dinámicos
+    // Estilos CSS para animaciones
     const styleSheet = document.createElement("style");
     styleSheet.innerText = `
-      @keyframes slideDown { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-      @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-      .glitch { font-weight: 900; letter-spacing: 4px; text-shadow: 2px 0 #fff, -2px 0 #FF00C1; }
+      @keyframes pulseRed { 0% { opacity: 1; transform: translateX(-50%) scale(1); } 50% { opacity: 0.8; transform: translateX(-50%) scale(1.05); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
+      .glitch { font-weight: 900; letter-spacing: 4px; color: white; }
     `;
     document.head.appendChild(styleSheet);
 
-    // INICIAR CÁMARA
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-          audio: false // No grabamos audio por privacidad y ruido
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: true // IMPORTANTE: Algunos navegadores fallan si no pides audio al grabar video
         });
-
-        streamRef.current = stream; // Guardamos referencia para el grabador
-        if (videoRef.current) videoRef.current.srcObject = stream;
-
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.volume = 0; // Silenciar feedback local
+        }
       } catch (err) {
         console.error("Error cámara:", err);
-        alert("No se pudo iniciar la cámara.");
+        alert("Permite el acceso a cámara y micrófono para grabar.");
       }
     }
     startCamera();
@@ -160,29 +164,35 @@ export default function App() {
     return () => clearInterval(checkCv);
   }, []);
 
-  // --- LÓGICA DE GRABACIÓN ---
-  const handleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
+  // --- LÓGICA DE GRABACIÓN MULTIPLATAFORMA ---
+
+  // Función para detectar el mejor formato soportado por el celular
+  const getSupportedMimeType = () => {
+    const types = [
+      'video/mp4',             // Ideal para iOS (Safari 14.1+)
+      'video/webm;codecs=h264',// Bueno para Chrome/Android
+      'video/webm;codecs=vp9', // Alta calidad Android
+      'video/webm'             // Fallback estándar
+    ];
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        console.log("Formato elegido:", type);
+        return type;
+      }
     }
+    return ''; // Dejar que el navegador elija el default
+  };
+
+  const handleRecording = () => {
+    if (isRecording) stopRecording();
+    else startRecording();
   };
 
   const startRecording = () => {
     if (!streamRef.current) return;
 
-    // Detectar mejor formato soportado (WebM para Android, MP4/QuickTime para iOS)
-    let options = { mimeType: 'video/webm;codecs=vp9' };
-    if (!MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
-      options = { mimeType: 'video/webm' };
-      if (!MediaRecorder.isTypeSupported('video/webm')) {
-        options = { mimeType: 'video/mp4' }; // Safari 14.1+
-        if (!MediaRecorder.isTypeSupported('video/mp4')) {
-          options = undefined; // Dejar que el navegador elija
-        }
-      }
-    }
+    const mimeType = getSupportedMimeType();
+    const options = mimeType ? { mimeType } : undefined;
 
     try {
       const recorder = new MediaRecorder(streamRef.current, options);
@@ -195,44 +205,57 @@ export default function App() {
         }
       };
 
-      recorder.onstop = saveVideo;
+      recorder.onstop = () => {
+        // AL DETENER, CREAMOS EL BLOB Y LA URL PARA PREVISUALIZAR
+        const type = mediaRecorderRef.current.mimeType || 'video/webm';
+        const blob = new Blob(recordedChunks.current, { type });
+        const url = URL.createObjectURL(blob);
+
+        setVideoBlob(blob);
+        setRecordedVideoUrl(url); // Esto activará la pantalla de preview
+        setIsRecording(false);
+      };
+
       recorder.start();
       setIsRecording(true);
-      setAiMessage("🔴 GRABANDO PAPEL...");
-      setTimeout(() => setAiMessage(null), 2000);
-
     } catch (err) {
-      console.error("Error al grabar:", err);
-      alert("Tu celular no soporta grabación directa.");
+      alert("Error al iniciar grabación: " + err.message);
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setAiMessage("💾 GUARDANDO VIDEO...");
-      setTimeout(() => setAiMessage(null), 3000);
     }
   };
 
-  const saveVideo = () => {
-    const blob = new Blob(recordedChunks.current, {
-      type: mediaRecorderRef.current.mimeType || 'video/webm'
-    });
-    const url = URL.createObjectURL(blob);
+  // --- GUARDAR O DESCARTAR ---
+  const saveVideoToDevice = () => {
+    if (!videoBlob) return;
+
+    // Determinar extensión correcta
+    const isMp4 = videoBlob.type.includes('mp4');
+    const extension = isMp4 ? 'mp4' : 'webm';
+
     const a = document.createElement("a");
     document.body.appendChild(a);
     a.style = "display: none";
-    a.href = url;
-    // Nombre del archivo con fecha
+    a.href = recordedVideoUrl;
     const date = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
-    a.download = `Drawing_Process_${date}.webm`;
+    a.download = `Sketch_Video_${date}.${extension}`;
     a.click();
-    window.URL.revokeObjectURL(url);
-  };
-  // ---------------------------
 
+    closePreview();
+  };
+
+  const closePreview = () => {
+    setRecordedVideoUrl(null);
+    setVideoBlob(null);
+    // Limpiar memoria
+    if (recordedVideoUrl) URL.revokeObjectURL(recordedVideoUrl);
+  };
+
+  // --- PROCESAMIENTO DE IMAGEN (Igual que versión 8) ---
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
       setIsProcessing(true);
@@ -242,7 +265,6 @@ export default function App() {
     }
   };
 
-  // MOTOR DE PROCESAMIENTO (Igual que v8)
   useEffect(() => {
     if (!imgUrl || !isCvReady) return;
     const imgElement = imgHiddenRef.current;
@@ -259,48 +281,32 @@ export default function App() {
         let dst = new cv.Mat();
         const internalWidth = 1000;
         let scaleFactor = internalWidth / src.cols;
-        let internalHeight = src.rows * scaleFactor;
-        let dsizeInternal = new cv.Size(internalWidth, internalHeight);
+        let dsize = new cv.Size(internalWidth, src.rows * scaleFactor);
         let resizedSrc = new cv.Mat();
-        cv.resize(src, resizedSrc, dsizeInternal, 0, 0, cv.INTER_AREA);
+        cv.resize(src, resizedSrc, dsize, 0, 0, cv.INTER_AREA);
 
+        // Auto-detección
         if (aiMessage === "🧠 Analizando...") {
-          let grayCheck = new cv.Mat();
-          cv.cvtColor(resizedSrc, grayCheck, cv.COLOR_RGBA2GRAY);
-          let edgesCheck = new cv.Mat();
-          cv.Canny(grayCheck, edgesCheck, 80, 150);
-          let complexity = cv.countNonZero(edgesCheck) / (internalWidth * internalHeight);
-          if (complexity > 0.08) {
-            setMode('scenery');
-            setAiMessage("🏞️ Modo Paisaje");
-          } else {
-            setMode('character');
-            setAiMessage("✨ Modo Personaje");
-          }
-          grayCheck.delete(); edgesCheck.delete();
-          setTimeout(() => setAiMessage(null), 2500);
+          let gray = new cv.Mat(); cv.cvtColor(resizedSrc, gray, cv.COLOR_RGBA2GRAY);
+          let edges = new cv.Mat(); cv.Canny(gray, edges, 80, 150);
+          let complexity = cv.countNonZero(edges) / (internalWidth * dsize.height);
+          if (complexity > 0.08) { setMode('scenery'); setAiMessage("🏞️ Modo Paisaje"); }
+          else { setMode('character'); setAiMessage("✨ Modo Personaje"); }
+          gray.delete(); edges.delete(); setTimeout(() => setAiMessage(null), 2000);
         }
 
         if (mode === 'character') {
-          let gray = new cv.Mat();
-          cv.cvtColor(resizedSrc, gray, cv.COLOR_RGBA2GRAY);
-          let smooth = new cv.Mat();
-          cv.bilateralFilter(gray, smooth, 12, 100, 100);
+          let gray = new cv.Mat(); cv.cvtColor(resizedSrc, gray, cv.COLOR_RGBA2GRAY);
+          let smooth = new cv.Mat(); cv.bilateralFilter(gray, smooth, 12, 100, 100);
           cv.adaptiveThreshold(smooth, dst, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 17, 7);
           let kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3));
           cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel);
           gray.delete(); smooth.delete(); kernel.delete();
-        }
-        else if (mode === 'scenery') {
-          let gray = new cv.Mat();
-          cv.cvtColor(resizedSrc, gray, cv.COLOR_RGBA2GRAY);
-          let posterized = new cv.Mat();
-          cv.bilateralFilter(gray, posterized, 9, 75, 75);
-          for (let i = 0; i < posterized.data.length; i++) {
-            posterized.data[i] = Math.floor(posterized.data[i] / 40) * 40;
-          }
-          let edges = new cv.Mat();
-          cv.adaptiveThreshold(gray, edges, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 9, 3);
+        } else {
+          let gray = new cv.Mat(); cv.cvtColor(resizedSrc, gray, cv.COLOR_RGBA2GRAY);
+          let posterized = new cv.Mat(); cv.bilateralFilter(gray, posterized, 9, 75, 75);
+          for (let i = 0; i < posterized.data.length; i++) posterized.data[i] = Math.floor(posterized.data[i] / 40) * 40;
+          let edges = new cv.Mat(); cv.adaptiveThreshold(gray, edges, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 9, 3);
           cv.bitwise_and(posterized, edges, dst);
           gray.delete(); posterized.delete(); edges.delete();
         }
@@ -310,108 +316,108 @@ export default function App() {
         let finalScale = Math.min(canvas.width / resizedSrc.cols, canvas.height / resizedSrc.rows);
         let finalW = resizedSrc.cols * finalScale;
         let finalH = resizedSrc.rows * finalScale;
-        let xOff = (canvas.width - finalW) / 2;
-        let yOff = (canvas.height - finalH) / 2;
-
         let finalResized = new cv.Mat();
         cv.resize(dst, finalResized, new cv.Size(finalW, finalH), 0, 0, cv.INTER_LINEAR);
 
         let fullScreenMat = new cv.Mat(canvas.height, canvas.width, cv.CV_8UC4, new cv.Scalar(255, 255, 255, 255));
-        let roiRect = new cv.Rect(xOff, yOff, finalW, finalH);
-        let destinationRoi = fullScreenMat.roi(roiRect);
-        finalResized.copyTo(destinationRoi);
+        let roi = fullScreenMat.roi(new cv.Rect((canvas.width - finalW) / 2, (canvas.height - finalH) / 2, finalW, finalH));
+        finalResized.copyTo(roi);
 
         cv.imshow('drawing-canvas', fullScreenMat);
 
-        src.delete(); dst.delete(); resizedSrc.delete(); fullScreenMat.delete();
-        destinationRoi.delete(); finalResized.delete();
+        src.delete(); dst.delete(); resizedSrc.delete(); fullScreenMat.delete(); roi.delete(); finalResized.delete();
         setIsProcessing(false);
-      } catch (e) { console.error(e); setIsProcessing(false); }
+      } catch (e) { setIsProcessing(false); }
     };
 
-    if (imgElement.complete && imgElement.naturalHeight !== 0) {
-      setTimeout(process, 100);
-    } else {
-      imgElement.onload = () => setTimeout(process, 100);
-    }
+    if (imgElement.complete && imgElement.naturalHeight !== 0) setTimeout(process, 100);
+    else imgElement.onload = () => setTimeout(process, 100);
   }, [imgUrl, isCvReady, mode, aiMessage]);
 
   return (
     <div style={styles.container}>
 
-      {/* INDICADOR REC FLOTANTE */}
-      {isRecording && (
-        <div style={styles.recIndicator}>
-          <div style={{ width: 10, height: 10, background: 'white', borderRadius: '50%' }}></div>
-          REC
-        </div>
-      )}
-
-      {/* TOAST MENSAJES */}
-      {aiMessage && <div style={styles.aiToast}>{aiMessage}</div>}
-
-      {/* LOADER */}
-      {(!isCvReady || isProcessing) && (
-        <div style={styles.loadingOverlay}>
-          <div className="glitch" style={{ fontSize: '32px', marginBottom: '15px', color: 'white' }}>ART LENS</div>
-          <div style={{ color: '#666', fontSize: '12px', letterSpacing: '2px' }}>
-            {isProcessing ? "RENDERIZANDO..." : "CARGANDO..."}
+      {/* 1. OVERLAY DE PREVISUALIZACIÓN (APARECE AL TERMINAR DE GRABAR) */}
+      {recordedVideoUrl && (
+        <div style={styles.previewOverlay}>
+          <h2 style={{ color: 'white', marginBottom: '20px' }}>Vista Previa</h2>
+          <video
+            src={recordedVideoUrl}
+            controls
+            playsInline
+            autoPlay
+            style={styles.previewVideo}
+          />
+          <div style={styles.previewActions}>
+            <button onClick={closePreview} style={styles.discardBtn}>🗑️ Borrar</button>
+            <button onClick={saveVideoToDevice} style={styles.saveBtn}>⬇️ Guardar</button>
           </div>
         </div>
       )}
 
-      {/* RECURSOS OCULTOS */}
-      <img ref={imgHiddenRef} src={imgUrl} style={{ display: 'none' }} alt="source" />
-      <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/*" />
+      {/* 2. UI NORMAL (SOLO VISIBLE SI NO HAY PREVIEW) */}
+      {!recordedVideoUrl && (
+        <>
+          {isRecording && (
+            <div style={styles.recIndicator}>
+              <div style={{ width: 10, height: 10, background: 'white', borderRadius: '50%' }}></div>
+              REC
+            </div>
+          )}
 
-      {/* VIDEO Y LIENZO */}
-      <video ref={videoRef} autoPlay playsInline muted style={styles.video} />
-      <canvas id="drawing-canvas" ref={canvasRef} style={{ ...styles.canvas, opacity: opacity }} />
+          {aiMessage && (
+            <div style={{ position: 'absolute', top: 80, left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '8px 16px', borderRadius: 20, fontWeight: 'bold', zIndex: 60 }}>
+              {aiMessage}
+            </div>
+          )}
 
-      {/* BOTÓN DESBLOQUEO */}
-      {isLocked && (
-        <button onClick={() => setIsLocked(false)} style={styles.floatingUnlock}>🔓</button>
-      )}
+          {(!isCvReady || isProcessing) && (
+            <div style={styles.loadingOverlay}>
+              <div className="glitch" style={{ fontSize: 32, marginBottom: 10 }}>CARGANDO...</div>
+            </div>
+          )}
 
-      {/* UI DOCK */}
-      {!isLocked && isCvReady && !isProcessing && (
-        <div style={styles.uiLayer}>
-          <div style={styles.dockContainer}>
-            <div style={styles.dock}>
+          <img ref={imgHiddenRef} src={imgUrl} style={{ display: 'none' }} alt="source" />
+          <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/*" />
 
-              <div style={styles.row}>
-                <span style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', opacity: 0.8 }}>OPACIDAD</span>
-                <div style={styles.sliderContainer}>
-                  <input type="range" min="0.1" max="1" step="0.05" value={opacity} onChange={(e) => setOpacity(e.target.value)} style={styles.slider} />
+          <video ref={videoRef} autoPlay playsInline muted style={styles.video} />
+          <canvas id="drawing-canvas" ref={canvasRef} style={{ ...styles.canvas, opacity: opacity }} />
+
+          {isLocked && <button onClick={() => setIsLocked(false)} style={styles.floatingUnlock}>🔓</button>}
+
+          {!isLocked && isCvReady && !isProcessing && (
+            <div style={styles.uiLayer}>
+              <div style={styles.dockContainer}>
+                <div style={styles.dock}>
+
+                  <div style={styles.row}>
+                    <span style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>OPACIDAD</span>
+                    <div style={styles.sliderContainer}>
+                      <input type="range" min="0.1" max="1" step="0.05" value={opacity} onChange={(e) => setOpacity(e.target.value)} style={styles.slider} />
+                    </div>
+                  </div>
+
+                  <div style={{ ...styles.row, background: 'rgba(255,255,255,0.05)', padding: 5, borderRadius: 16 }}>
+                    <button onClick={() => setMode('character')} style={mode === 'character' ? { ...styles.btn, ...styles.activeBtn } : styles.btn}>🧑‍🦱 Pers.</button>
+                    <button onClick={() => setMode('scenery')} style={mode === 'scenery' ? { ...styles.btn, ...styles.activeBtn } : styles.btn}>🏞️ Paisaje</button>
+                  </div>
+
+                  <div style={styles.row}>
+                    <button onClick={handleRecording} style={isRecording ? { ...styles.btn, ...styles.recordBtnActive } : { ...styles.btn, ...styles.recordBtn }}>
+                      {isRecording ? "⏹ PARAR" : "⏺ GRABAR"}
+                    </button>
+                  </div>
+
+                  <div style={styles.row}>
+                    <button onClick={() => fileInputRef.current.click()} style={{ ...styles.btn, background: 'white', color: 'black' }}>📂 Foto</button>
+                    <button onClick={() => setIsLocked(true)} style={{ ...styles.btn, background: '#FF3D00', color: 'white' }}>🔒 Lock</button>
+                  </div>
+
                 </div>
               </div>
-
-              <div style={{ ...styles.row, background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '18px' }}>
-                <button onClick={() => setMode('character')} style={mode === 'character' ? { ...styles.btn, ...styles.activeBtn } : styles.btn}>
-                  🧑‍🦱 Pers.
-                </button>
-                <button onClick={() => setMode('scenery')} style={mode === 'scenery' ? { ...styles.btn, ...styles.activeBtn } : styles.btn}>
-                  🏞️ Paisaje
-                </button>
-              </div>
-
-              {/* BOTON DE GRABAR AGREGADO */}
-              <div style={styles.row}>
-                <button
-                  onClick={handleRecording}
-                  style={isRecording ? { ...styles.btn, ...styles.recordBtnActive } : { ...styles.btn, ...styles.recordBtn }}>
-                  {isRecording ? "⏹ DETENER" : "⏺ GRABAR"}
-                </button>
-              </div>
-
-              <div style={styles.row}>
-                <button onClick={() => fileInputRef.current.click()} style={{ ...styles.btn, ...styles.actionBtn }}>📂 Foto</button>
-                <button onClick={() => setIsLocked(true)} style={{ ...styles.btn, ...styles.lockBtnStyle }}>🔒 Lock</button>
-              </div>
-
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   )
